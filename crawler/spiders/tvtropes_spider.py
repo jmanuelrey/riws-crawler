@@ -3,7 +3,7 @@ from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from scrapy.exceptions import CloseSpider
 
-import os, json
+import re, os, json
 
 class TvTropesSpider(CrawlSpider):
 	# Nombre del crawler
@@ -12,7 +12,9 @@ class TvTropesSpider(CrawlSpider):
 	allowed_domains = ['tvtropes.org']
 	# URLs iniciales
 	start_urls = ['https://tvtropes.org/pmwiki/pagelist_having_pagetype_in_namespace.php?n=Main&t=trope&page=1']
-	#start_urls = ['https://tvtropes.org/pmwiki/pmwiki.php/Main/TheManIsStickingItToTheMan']
+	
+	# Lista de medios
+	media_list = ['Film', 'Series', 'Anime', 'Manga', 'LightNovel'] # TODO rellenar
 	
 	# Reglas de crawling
 	rules = (
@@ -37,10 +39,16 @@ class TvTropesSpider(CrawlSpider):
 	
 	# Crawlear MAX_COUNT paginas
 	# Nota: no se crawlean *exactamente* MAX_COUNT paginas
-	MAX_COUNT = 1000
+	MAX_COUNT = 10
 	custom_settings = {
 			'CLOSESPIDER_PAGECOUNT': MAX_COUNT
 	}
+	
+	# Obtener directorio actual
+	current_directory = os.getcwd()
+	# Obtener carpeta 'data' dentro del directorio
+	final_directory = os.path.join(current_directory, 'data/')
+	os.mkdir(final_directory, 'w+')
 	
 	# Crear archivos asociados a un tropo, en formato json
 	def create_files(self, json_file, file_name):
@@ -50,17 +58,13 @@ class TvTropesSpider(CrawlSpider):
 		file_dir = '{}-{}'.format(json_file['title'],file_name)
 		file_dir = file_dir.replace(" ","-") 
 	
-		# Obtener directorio actual
-		current_directory = os.getcwd()
-		
 		# Crear jerarquia de carpetas
 		# Para cada elemento, se crea una carpeta 'data/tropo' y otra 'data/laconic' (si tiene)
 		# La carpeta 'data' solo se crea la primera vez
-		final_directory = os.path.join(current_directory, 'data/') # TODO: testear esta linea (y las siguientes) en Linux
 		if not os.path.exists(os.path.join(final_directory, file_dir + '/')):
 			os.makedirs(final_directory + file_dir + '/')
 
-		with open(final_directory + file_dir + '/' + file_name + '.json', 'w+', encoding='utf-8') as fp:
+		with open(self.final_directory + file_dir + '/' + file_name + '.json', 'w+', encoding='utf-8') as fp:
 			json.dump(json_file, fp)
 	
 	# Generar objeto json con los datos del elemento
@@ -71,11 +75,29 @@ class TvTropesSpider(CrawlSpider):
 		links = article.links
 		current_url = article.canonical_link
 		
+		media_links = []
+		non_media_links = []
+		
+		# Para cada enlace extraido por goose
+		for(i, link) in enumerate(links):
+			added = False
+			# Para cada medio posible
+			for media in media_list:
+			# Si el enlace contiene uno de los medios, lo almacenamos en su lista
+				if(re.search("*/" + media + "/*", link)):
+					media_links.append(link)
+					added = True
+					break
+			if(not added):
+				# Si el enlace no contiene ningun medio, lo almacenamos en otra
+				non_media_links.append(link)
+		
 		json_file = {
 			"title": title,
 			"content": content,
 			"url": current_url,
-			"links": links
+			"media_links": media_links,
+			"non_media_links": non_media_links,
 		}
 		
 		return json_file
@@ -89,7 +111,7 @@ class TvTropesSpider(CrawlSpider):
 		
 		# Objeto Goose para extraer datos de la pagina
 		goose_extractor = Goose()
-		article = goose_extractor.extract(raw_html=html) # TODO: article parece que no contiene los enlaces Laconic. Corregir?
+		article = goose_extractor.extract(raw_html=html)
 		
 		# Comprobar que la pagina contenga (por lo menos) un header h2 con la palabra 'Examples', para saber si es un tropo o no
 		if(response.css('h2').re('.Examples.')):
@@ -97,6 +119,9 @@ class TvTropesSpider(CrawlSpider):
 			follow = True
 			#json_file = self.generate_json(article)
 			#self.create_files(json_file, 'tropo')
+			
+			with open(self.final_directory + 'trope_list.txt', 'a+', encoding='utf-8') as fp:
+				fp.write(response.url+'\n')
 			
 		else:
 			self.non_trope_count += 1
