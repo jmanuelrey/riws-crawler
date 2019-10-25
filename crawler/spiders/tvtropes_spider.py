@@ -39,7 +39,7 @@ class TvTropesSpider(CrawlSpider):
 	
 	# Crawlear MAX_COUNT paginas
 	# Nota: no se crawlean *exactamente* MAX_COUNT paginas
-	MAX_COUNT = 10
+	MAX_COUNT = 10000
 	custom_settings = {
 			'CLOSESPIDER_PAGECOUNT': MAX_COUNT
 	}
@@ -48,7 +48,7 @@ class TvTropesSpider(CrawlSpider):
 	current_directory = os.getcwd()
 	# Obtener carpeta 'data' dentro del directorio
 	final_directory = os.path.join(current_directory, 'data/')
-	os.mkdir(final_directory, 'w+')
+	os.mkdir(final_directory)
 	
 	# Crear archivos asociados a un tropo, en formato json
 	def create_files(self, json_file, file_name):
@@ -61,8 +61,8 @@ class TvTropesSpider(CrawlSpider):
 		# Crear jerarquia de carpetas
 		# Para cada elemento, se crea una carpeta 'data/tropo' y otra 'data/laconic' (si tiene)
 		# La carpeta 'data' solo se crea la primera vez
-		if not os.path.exists(os.path.join(final_directory, file_dir + '/')):
-			os.makedirs(final_directory + file_dir + '/')
+		if not os.path.exists(os.path.join(self.final_directory, file_dir + '/')):
+			os.makedirs(self.final_directory + file_dir + '/')
 
 		with open(self.final_directory + file_dir + '/' + file_name + '.json', 'w+', encoding='utf-8') as fp:
 			json.dump(json_file, fp)
@@ -82,9 +82,9 @@ class TvTropesSpider(CrawlSpider):
 		for(i, link) in enumerate(links):
 			added = False
 			# Para cada medio posible
-			for media in media_list:
+			for media in self.media_list:
 			# Si el enlace contiene uno de los medios, lo almacenamos en su lista
-				if(re.search("*/" + media + "/*", link)):
+				if(re.search("\*/" + media + "/\*", link)):
 					media_links.append(link)
 					added = True
 					break
@@ -117,8 +117,8 @@ class TvTropesSpider(CrawlSpider):
 		if(response.css('h2').re('.Examples.')):
 			self.trope_count+=1
 			follow = True
-			#json_file = self.generate_json(article)
-			#self.create_files(json_file, 'tropo')
+			json_file = self.generate_json(article)
+			self.create_files(json_file, 'tropo')
 			
 			with open(self.final_directory + 'trope_list.txt', 'a+', encoding='utf-8') as fp:
 				fp.write(response.url+'\n')
@@ -128,8 +128,8 @@ class TvTropesSpider(CrawlSpider):
 			if('Laconic' in response.url):
 				print('Encontrado un Laconic!')
 				self.laconic_count += 1
-				#json_file = self.generate_json(article)
-				#self.create_files(json_file, 'laconic')
+				json_file = self.generate_json(article)
+				self.create_files(json_file, 'laconic')
 			else:
 				print('Enlace ignorado! (no era un tropo)')
 			follow = False
