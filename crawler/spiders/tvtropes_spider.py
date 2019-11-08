@@ -14,7 +14,7 @@ class TvTropesSpider(CrawlSpider):
 	start_urls = ['https://tvtropes.org/pmwiki/pagelist_having_pagetype_in_namespace.php?n=Main&t=trope&page=1']
 	
 	# Lista de medios
-	media_list = ['Film', 'Series', 'Anime', 'Manga', 'LightNovel'] # TODO rellenar
+	media_list = ['Film', 'Series', 'Anime', 'Manga', 'VisualNovel', 'LightNovel', 'WesternAnimation', 'Disney', 'Animation', 'Toys', 'Literature', 'ComicBook', 'VideoGame', 'Website', 'Creator', 'Franchise', 'TabletopGame', 'Webcomic', 'Radio', 'Manhua', 'Manhwa', 'Music', 'Theatre', 'Myth', 'Ride'] # TODO rellenar
 	
 	# Reglas de crawling
 	rules = (
@@ -56,8 +56,7 @@ class TvTropesSpider(CrawlSpider):
 		# El nombre de la carpeta contenedora es de la forma 'titulo'-tropo o 'titulo'-laconic, 
 		# con los espacios del titulo sustituidos por guiones
 		file_dir = '{}-{}'.format(json_file['title'],file_name)
-		file_dir = file_dir.replace(" ","-") 
-	
+		file_dir = file_dir.replace(" ","-")
 		# Crear jerarquia de carpetas
 		# Para cada elemento, se crea una carpeta 'data/tropo' y otra 'data/laconic' (si tiene)
 		# La carpeta 'data' solo se crea la primera vez
@@ -71,6 +70,9 @@ class TvTropesSpider(CrawlSpider):
 	def generate_json(self, article):
 	
 		title = article.title
+		title = title.replace(' / Laconic', '') ###
+		title = title.replace('/', '-') ###
+		
 		content = article.cleaned_text
 		links = article.links
 		current_url = article.canonical_link
@@ -120,6 +122,7 @@ class TvTropesSpider(CrawlSpider):
 			json_file = self.generate_json(article)
 			self.create_files(json_file, 'tropo')
 			
+			# Archivo para comprobar los tropos indexados
 			with open(self.final_directory + 'trope_list.txt', 'a+', encoding='utf-8') as fp:
 				fp.write(response.url+'\n')
 			
