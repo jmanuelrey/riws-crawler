@@ -86,7 +86,9 @@ class TvTropesSpider(CrawlSpider):
 			# Para cada medio posible
 			for media in self.media_list:
 			# Si el enlace contiene uno de los medios, lo almacenamos en su lista
-				if(re.search("\*/" + media + "/\*", link)):
+				rx = "/("+media+")/"
+				
+				if(re.search(rx, link)):
 					media_links.append(link)
 					added = True
 					break
