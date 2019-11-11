@@ -118,15 +118,15 @@ class TvTropesSpider(CrawlSpider):
 		article = goose_extractor.extract(raw_html=html)
 		
 		# Comprobar que la pagina contenga (por lo menos) un header h2 con la palabra 'Examples', para saber si es un tropo o no
-		if(response.css('h2').re('.Examples.')):
+		if(response.css('h2').re('.Examples:.')):
 			self.trope_count+=1
 			follow = True
 			json_file = self.generate_json(article)
 			self.create_files(json_file, 'tropo')
 			
 			# Archivo para comprobar los tropos indexados
-			with open(self.final_directory + 'trope_list.txt', 'a+', encoding='utf-8') as fp:
-				fp.write(response.url+'\n')
+			#with open(self.final_directory + 'trope_list.txt', 'a+', encoding='utf-8') as fp:
+			#	fp.write(response.url+'\n')
 			
 		else:
 			self.non_trope_count += 1
