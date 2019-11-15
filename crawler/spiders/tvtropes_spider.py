@@ -86,7 +86,7 @@ class TvTropesSpider(CrawlSpider):
 			# Para cada medio posible
 			for media in self.media_list:
 			# Si el enlace contiene uno de los medios, lo almacenamos en su lista
-				rx = "/("+media+")/"
+				rx = "pmwiki/pmwiki.php/("+media+")/"
 				
 				if(re.search(rx, link)):
 					media_links.append(link)
